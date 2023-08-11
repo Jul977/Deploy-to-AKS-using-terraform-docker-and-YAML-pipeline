@@ -36,7 +36,7 @@ stages:
 
 - stage: Deploy
   displayName: Deploy to Dev
-  dependsOn: DeployTheCode
+  dependsOn: Build
   variables:
     julacrsecret: 123456
   jobs:
