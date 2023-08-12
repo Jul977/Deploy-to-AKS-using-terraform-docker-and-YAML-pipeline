@@ -1,6 +1,6 @@
 # This project explains the deployment of a .NET application to Azure Kubernetes service AKS using docker terraform and YAML pipeline.
 
-**Workflow:**
+## Workflow:
 
 Create the .NET application (Julapp) using Visual Studio.
 
