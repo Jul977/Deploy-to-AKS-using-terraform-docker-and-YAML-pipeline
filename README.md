@@ -19,19 +19,19 @@ The YAML pipeline (azure-pipelines.yml) consists of 4 stages.
 
 ![cicd](https://github.com/Jul977/Deploy-to-AKS-using-terraform-docker-and-YAML-pipeline/assets/110497123/d9b8ac67-6437-44f6-84b0-d3de0ac965de)
 
-Terraform Validate:
+**Terraform Validate:**
 This installs terraform and initialize it with our remote backend before checking if our code is valid
 
-Terraform Deploy:
+**Terraform Deploy:**
 This refreshes the state file before deploying main.tf to Azure
 
-Docker_Build_and_Push:
+**Docker_Build_and_Push:**
 This builds our application in the form of a container image before pushing it to our private registry ACR which has already been provisioned on Azure
 Also, the manifest file julimage-deployment.yaml is uploaded as an artifact to our current operation.
 
-Continuous Deployment stage
+**Continuous Deployment stage**
 
-Deploy_to_AKS:
+**Deploy_to_AKS:**
 Downloads the artifact which will be used alongside the image on ACR to create the deployment and service.
 An environment jul-aks was incorporated into the pipeline to grant real-time access to the Kubernetes cluster from Azure DevOps.
 
