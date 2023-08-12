@@ -5,13 +5,10 @@
 1. Create the .NET application (Julapp) using Visual Studio.
 
 1. Write a docker file to package the application in the form of a container image.
-   
-The docker file should be placed in the root folder of the application.
+   The docker file should be placed in the root folder of the application.
 
 1. Write the terraform confgiuration file to provision AKS and azure container registry ACR.
-
 The terraform code main.tf deploys the resource AKS and ACR to Azure and also grants AKS the needed roles to pull images from ACR.
-
 The service principal / Managed identity/user authenticating to Azure from the terminal needs to have the contributor role on the subscription level for the role assignment to be adequately provisioned.
 
 1. Write the YAML pipeline to deploy the push-based CI/CD workflow.
