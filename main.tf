@@ -11,6 +11,17 @@ provider "azurerm" {
   features {}
 }
 
+# Instructing terraform to use the remote backend for our state file
+# Comment this block of code if a remote backend is not configured
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "tf-rg-statefile"
+    storage_account_name = "jultfstorage"
+    container_name       = "jultfstate"
+    key                  = "k8.terraform.tfstate"
+  }
+}
+
 resource "azurerm_resource_group" "rg" {
   name     = var.rg_name
   location = var.location

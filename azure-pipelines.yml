@@ -1,72 +1,57 @@
+# Pipeline to deploy our infrastructure, build our application before deploying to our infrastructure
+
+
 trigger:
 - main
 
 resources:
 - repo: self
 
+pool:
+  vmImage: ubuntu-latest
+
 variables:
-  ImageRepo: julimage
-  tag: '$(Build.BuildId)'
+ imageName: julimage
+ tag: '$(Build.BuildId)'
+ rbendrg: "tf-rg-statefile"
+ rbend: "jultfstorage"
+ rbendcontainer: "jultfstate"
+ rbendkey: "k8.terraform.tfstate"
+
 
 stages:
-- stage: Build
-  displayName: Build image
-  jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: ubuntu-latest
-    steps:
-    - task: Docker@2
-      displayName: Build and push an image to container registry
-      inputs:
-        containerRegistry: 'julacr'
-        repository: '$ImageRepo'
-        command: 'buildAndPush'
-        Dockerfile: '$(Build.SourcesDirectory)/Julapp/Julapp/Dockerfile'
-        tags: |
-          $(tag)
-          latest
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: '$(Pipeline.Workspace)/$/kubernetes'
-        artifact: 'manifest'
-        publishLocation: 'pipeline'
-    
+  - stage: Terraform_Validate
+    jobs:
+      - job: Validate_code
+        continueOnError: false
+        steps:
+          - template: ./tfvalidate-template.yml
+                   
+  - stage: Terraform_Deploy
+    condition: succeeded('Terraform_Validate')
+    dependsOn: Terraform_Validate
+    jobs:
+      - job: Terraform_apply
+        steps:
+          - template: ./tfdeploy-template.yml
 
-- stage: Deploy
-  displayName: Deploy to Dev
-  dependsOn: Build
-  variables:
-    julacrsecret: 123456
-  jobs:
-    - job: Deploy
-      displayName: Deploy To AKS
-      pool:
-       vmImage: ubuntu-latest
-      steps:
-        - task: DownloadPipelineArtifact@2
-          inputs:
-            buildType: 'current'
-            artifactName: 'manifest'
-            targetPath: '$(Pipeline.Workspace)/manifest'
-        - task: KubernetesManifest@1
-          inputs:
-            action: 'createSecret'
-            connectionType: 'azureResourceManager'
-            azureSubscriptionConnection: 'JulServicePrincipal'
-            azureResourceGroup: 'Bin'
-            kubernetesCluster: 'jul-aks'
-            namespace: 'default'
-            secretType: 'dockerRegistry'
-            secretName: '$(julacrsecret)'
-            dockerRegistryEndpoint: 'julacr'
-        - task: KubernetesManifest@1
-          inputs:
-            action: 'deploy'
-            connectionType: 'azureResourceManager'
-            azureSubscriptionConnection: 'JulServicePrincipal'
-            azureResourceGroup: 'Bin'
-            kubernetesCluster: 'jul-aks'
-            namespace: 'default'
-            manifests: '$(Pipeline.Workspace)/manifest/julimage-deployment.yaml'
+  - stage: Docker_Build_and_Push 
+    condition: succeeded('Terraform_Deploy')
+    dependsOn:  Terraform_Deploy
+    jobs:
+      - job: Build_the_Image
+        steps:
+          - template: ./buildimage-template.yml 
+
+  - stage: Deploy_to_AKS 
+    condition: succeeded('Docker_Build_and_Push')
+    dependsOn: Docker_Build_and_Push 
+    jobs:
+      - deployment: Deploy_To_AKS
+        displayName: Deploy_To_AKS
+        environment: 'k8prod.default'
+        strategy:
+         runOnce:
+           deploy:
+            steps:
+            - template: ./deploy-AKS-template.yml 

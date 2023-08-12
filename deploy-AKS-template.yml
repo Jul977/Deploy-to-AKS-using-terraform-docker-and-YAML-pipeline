@@ -1,0 +1,11 @@
+steps:
+            - task: DownloadPipelineArtifact@2
+              inputs:
+                buildType: 'current'
+                artifactName: 'manifest'
+                targetPath: '$(Pipeline.Workspace)/manifest'
+            - task: KubernetesManifest@1
+              inputs:
+                action: 'deploy'
+                namespace: 'default'
+                manifests: '$(Pipeline.Workspace)/manifest/julimage-deployment.yaml'
